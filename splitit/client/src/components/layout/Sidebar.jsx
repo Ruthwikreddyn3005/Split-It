@@ -13,7 +13,7 @@ const navItems = [
   { to: '/balances',  label: 'Balances',  icon: IconScale },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="sidebar">
+      <aside className={`sidebar${isOpen ? ' open' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="sidebar-logo">
           <h2>💸 SplitIt</h2>
         </div>
@@ -46,6 +46,7 @@ export default function Sidebar() {
               key={to}
               to={to}
               className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              onClick={onClose}
             >
               <Icon />
               {label}
@@ -54,17 +55,17 @@ export default function Sidebar() {
         </nav>
 
         <div className="sidebar-footer">
-          <NavLink to="/profile" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+          <NavLink to="/profile" onClick={onClose} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
             <div className="avatar avatar-sm">{initials(user?.name)}</div>
             <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.name}
             </span>
           </NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+          <NavLink to="/settings" onClick={onClose} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
             <IconSettings />
             Settings
           </NavLink>
-          <button className="nav-link btn-ghost" onClick={handleLogout} style={{ width: '100%' }}>
+          <button className="nav-link btn-ghost" onClick={() => { onClose?.(); handleLogout(); }} style={{ width: '100%' }}>
             <IconLogout />
             Logout
           </button>
