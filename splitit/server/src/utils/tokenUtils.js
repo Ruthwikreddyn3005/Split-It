@@ -30,18 +30,20 @@ export function setCookies(res, accessToken, refreshToken) {
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict',
-    maxAge: 15 * 60 * 1000, // 15 min
+    sameSite: isProd ? 'none' : 'strict',
+    maxAge: 15 * 60 * 1000,
   });
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: isProd ? 'none' : 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
 
 export function clearCookies(res) {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie('accessToken', { secure: isProd, sameSite: isProd ? 'none' : 'strict' });
+  res.clearCookie('refreshToken', { secure: isProd, sameSite: isProd ? 'none' : 'strict' });
 }
+
