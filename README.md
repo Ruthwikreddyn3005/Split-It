@@ -1,5 +1,7 @@
 # SplitIt
 
+**Live Demo:** https://split-it-hazel.vercel.app
+
 A full-stack expense splitting web app — split bills with friends and groups, track balances, and settle up easily.
 
 ## Features
