@@ -1,26 +1,50 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { authApi } from '../../api/authApi.js';
 import { extractError } from '../../utils/formatters.js';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [unverified, setUnverified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMsg, setResendMsg] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setUnverified(false);
+    setResendMsg('');
     setLoading(true);
     try {
       await login(form.email, form.password);
       navigate('/dashboard');
     } catch (err) {
-      setError(extractError(err));
+      const msg = extractError(err);
+      const status = err?.response?.status;
+      if (status === 403 && msg.toLowerCase().includes('verify')) {
+        setUnverified(true);
+      }
+      setError(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    setResendMsg('');
+    try {
+      await authApi.resendVerification(form.email);
+      setResendMsg('Verification email sent! Check your inbox.');
+    } catch (err) {
+      setResendMsg(extractError(err));
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -40,9 +64,27 @@ export default function LoginPage() {
             borderRadius: 'var(--radius-sm)',
             padding: '0.75rem 1rem',
             fontSize: '0.875rem',
-            marginBottom: '1rem',
+            marginBottom: unverified ? '0.5rem' : '1rem',
           }}>
             {error}
+          </div>
+        )}
+
+        {unverified && (
+          <div style={{ marginBottom: '1rem', fontSize: '0.875rem' }}>
+            {resendMsg ? (
+              <p style={{ color: resendMsg.includes('sent') ? 'var(--success)' : 'var(--danger)', margin: 0 }}>{resendMsg}</p>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem' }}
+                onClick={handleResend}
+                disabled={resendLoading}
+              >
+                {resendLoading ? <span className="spinner spinner-sm" /> : 'Resend verification email'}
+              </button>
+            )}
           </div>
         )}
 
