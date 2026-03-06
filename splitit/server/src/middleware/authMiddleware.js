@@ -4,7 +4,9 @@ import User from '../models/User.js';
 
 export async function protect(req, res, next) {
   try {
-    const token = req.cookies?.accessToken;
+    const token = req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.split(' ')[1]
+      : req.cookies?.accessToken;
     if (!token) throw new ApiError(401, 'Not authenticated');
 
     const decoded = verifyAccessToken(token);

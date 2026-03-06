@@ -138,6 +138,8 @@ export async function login(req, res, next) {
         currency: user.currency,
         theme: user.theme,
       },
+      accessToken,
+      refreshToken,
     }, 'Logged in');
   } catch (err) {
     next(err);
@@ -146,7 +148,7 @@ export async function login(req, res, next) {
 
 export async function refresh(req, res, next) {
   try {
-    const rawRefresh = req.cookies?.refreshToken;
+    const rawRefresh = req.cookies?.refreshToken || req.body?.refreshToken;
     if (!rawRefresh) throw new ApiError(401, 'No refresh token');
 
     let decoded;
@@ -171,7 +173,7 @@ export async function refresh(req, res, next) {
     const newAccess = signAccessToken({ userId: user._id, email: user.email });
     setCookies(res, newAccess, newRefresh);
 
-    ok(res, {}, 'Token refreshed');
+    ok(res, { accessToken: newAccess, refreshToken: newRefresh }, 'Token refreshed');
   } catch (err) {
     next(err);
   }
@@ -179,7 +181,7 @@ export async function refresh(req, res, next) {
 
 export async function logout(req, res, next) {
   try {
-    const rawRefresh = req.cookies?.refreshToken;
+    const rawRefresh = req.cookies?.refreshToken || req.body?.refreshToken;
     if (rawRefresh) {
       const user = await User.findById(req.user?._id);
       if (user) {

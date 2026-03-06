@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { userApi } from '../api/userApi.js';
 import { authApi } from '../api/authApi.js';
+import { setAccessToken } from '../api/axiosInstance.js';
 
 const AuthContext = createContext(null);
 
@@ -9,20 +10,41 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    userApi.getMe()
-      .then((res) => setUser(res.data.data.user))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    const storedRefresh = localStorage.getItem('refreshToken');
+    if (storedRefresh) {
+      authApi.refresh({ refreshToken: storedRefresh })
+        .then((res) => {
+          const { accessToken, refreshToken } = res.data.data;
+          setAccessToken(accessToken);
+          if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+          return userApi.getMe();
+        })
+        .then((res) => setUser(res.data.data.user))
+        .catch(() => {
+          setAccessToken(null);
+          localStorage.removeItem('refreshToken');
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email, password) => {
     const res = await authApi.login({ email, password });
-    setUser(res.data.data.user);
-    return res.data.data.user;
+    const { user, accessToken, refreshToken } = res.data.data;
+    setAccessToken(accessToken);
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    setUser(user);
+    return user;
   };
 
   const logout = async () => {
-    await authApi.logout().catch(() => {});
+    const refreshToken = localStorage.getItem('refreshToken');
+    await authApi.logout({ refreshToken }).catch(() => {});
+    setAccessToken(null);
+    localStorage.removeItem('refreshToken');
     setUser(null);
   };
 

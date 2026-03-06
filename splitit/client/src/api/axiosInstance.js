@@ -1,8 +1,22 @@
 import axios from 'axios';
 
+// In-memory token store (survives re-renders, lost on page refresh — restored via refreshToken in localStorage)
+let accessToken = null;
+
+export function setAccessToken(token) { accessToken = token; }
+export function getAccessToken() { return accessToken; }
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
+});
+
+// Attach access token to every request
+api.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
 });
 
 let isRefreshing = false;
@@ -19,12 +33,13 @@ api.interceptors.response.use(
     const original = error.config;
 
     const redirectToLogin = () => {
+      accessToken = null;
+      localStorage.removeItem('refreshToken');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     };
 
-    // If the refresh endpoint itself failed, break the deadlock immediately
     if (original.url === '/auth/refresh') {
       isRefreshing = false;
       processQueue(error);
@@ -45,8 +60,13 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post('/auth/refresh');
+        const storedRefresh = localStorage.getItem('refreshToken');
+        const res = await api.post('/auth/refresh', storedRefresh ? { refreshToken: storedRefresh } : {});
+        const { accessToken: newAccess, refreshToken: newRefresh } = res.data.data;
+        accessToken = newAccess;
+        if (newRefresh) localStorage.setItem('refreshToken', newRefresh);
         processQueue(null);
+        original.headers.Authorization = `Bearer ${newAccess}`;
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr);
