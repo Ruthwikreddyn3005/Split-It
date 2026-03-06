@@ -54,7 +54,7 @@ export async function register(req, res, next) {
       try {
         await sendVerificationEmail(email, name, rawToken);
       } catch (emailErr) {
-        console.error('Email send failed:', emailErr.message);
+        console.error('Email send failed:', emailErr.message, emailErr.code, emailErr.response);
       }
     }
 
