@@ -90,6 +90,7 @@ input, textarea, select { font-family: inherit; }
   height: 100vh;
   z-index: 100;
   padding: 1.5rem 0;
+  overflow-y: auto;
 }
 
 .main-content {
