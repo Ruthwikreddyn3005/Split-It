@@ -1,9 +1,9 @@
-import { transporter } from '../config/email.js';
+import { resend } from '../config/email.js';
 
 export async function sendVerificationEmail(to, name, token) {
   const url = `${process.env.FRONTEND_URL}/verify-email/${token}`;
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || 'SplitIt <onboarding@resend.dev>',
     to,
     subject: 'Verify your SplitIt email',
     html: `
@@ -20,8 +20,8 @@ export async function sendVerificationEmail(to, name, token) {
 
 export async function sendPasswordResetEmail(to, name, token) {
   const url = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || 'SplitIt <onboarding@resend.dev>',
     to,
     subject: 'Reset your SplitIt password',
     html: `
